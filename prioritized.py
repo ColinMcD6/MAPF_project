@@ -28,9 +28,7 @@ class PrioritizedPlanningSolver(object):
 
         start_time = timer.time()
         result = []
-        constraints = [{'agent': 0,
-                        'loc': [(1, 5)],
-                        'time_step': 4}]
+        constraints = []
 
         for i in range(self.num_of_agents):  # Find path for each agent
             path = a_star(self.my_map, self.starts[i], self.goals[i], self.heuristics[i],
@@ -46,7 +44,21 @@ class PrioritizedPlanningSolver(object):
             #            * self.num_of_agents has the number of total agents
             #            * constraints: array of constraints to consider for future A* searches
 
-
+            for agent in range(i + 1, self.num_of_agents):
+                time = 0
+                for j in range(len(path)):
+                    constraints.append({'agent': agent,
+                                        'loc': [path[j]],
+                                        'time_step': time})
+                    if time != 0:
+                        constraints.append({'agent': agent,
+                                            'loc': [path[j], path[j - 1]],
+                                            'time_step': time})
+                    time += 1
+                # Use 'loc': (-1, -1), (x, y) to signify that there is an agent there at all future times
+                constraints.append({'agent': agent,
+                                    'loc': [(-1, -1), path[len(path) - 1]],
+                                    'time_step': time - 1})
             ##############################
 
         self.CPU_time = timer.time() - start_time

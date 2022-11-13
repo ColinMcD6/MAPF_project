@@ -86,14 +86,24 @@ def get_path(goal_node):
     return path
 
 
+def get_path_length(last_node):
+    path = []
+    curr = last_node
+    while curr is not None:
+        path.append(curr['loc'])
+        curr = curr['parent']
+    return len(path)
+
+
 def is_constrained(curr_loc, next_loc, next_time, constraint_table):
     ##############################
     # Task 1.2/1.3: Check if a move from curr_loc to next_loc at time step next_time violates
     #               any given constraint. For efficiency the constraints are indexed in a constraint_table
     #               by time step, see build_constraint_table.
 
-    if is_vertex_constrained(next_loc, next_time, constraint_table)\
-            or is_edge_constrained(curr_loc, next_loc, next_time, constraint_table):
+    if is_vertex_constrained(next_loc, next_time, constraint_table) \
+            or is_edge_constrained(curr_loc, next_loc, next_time, constraint_table)\
+            or finished_agent_in_way(next_loc, next_time, constraint_table):
         return True
     else:
         return False
@@ -113,6 +123,29 @@ def is_edge_constrained(curr_loc, next_loc, next_time, constraint_table):
         return False
 
 
+def finished_agent_in_way(next_loc, next_time, constraint_table):
+    for i in range(next_time):
+        if i in constraint_table and [(-1, -1), next_loc] in constraint_table[i]:
+            return True
+    return False
+
+
+def no_goal_constraints(time, goal, constraint_table):
+    if time <= max_time_of_constraints(constraint_table):
+        for t in range(time, max(constraint_table.keys())):
+            if is_vertex_constrained(goal, t, constraint_table):
+                return False
+    else:
+        return True
+
+
+def max_time_of_constraints(constraint_table):
+    if len(constraint_table.keys()) == 0:
+        return 0
+    else:
+        return max(constraint_table.keys())
+
+
 def push_node(open_list, node):
     heapq.heappush(open_list, (node['g_val'] + node['h_val'], node['h_val'], node['loc'], node))
 
@@ -123,7 +156,7 @@ def pop_node(open_list):
 
 
 def compare_nodes(n1, n2):
-    """Return true is n1 is better than n2."""
+    """Return true if n1 is better than n2."""
     return n1['g_val'] + n1['h_val'] < n2['g_val'] + n2['h_val']
 
 
@@ -139,6 +172,7 @@ def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
     # Task 1.1: Extend the A* search to search in the space-time domain
     #           rather than space domain, only.
 
+    max_path_length = h_values[start_loc]*h_values[start_loc]
     open_list = []
     closed_list = dict()
     earliest_goal_time_step = 0
@@ -155,13 +189,13 @@ def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
         curr = pop_node(open_list)
         #############################
         # Task 1.4: Adjust the goal test condition to handle goal constraints
-        if curr['loc'] == goal_loc and curr['time_step'] > max(constraint_table.keys()):
+        if curr['loc'] == goal_loc and no_goal_constraints(curr['time_step'], curr['loc'], constraint_table):
             return get_path(curr)
         for dir in range(5):
             child_loc = move(curr['loc'], dir)
             if my_map[child_loc[0]][child_loc[1]]:
                 continue
-            if is_constrained(curr['loc'], child_loc, curr['time_step']+1, constraint_table):
+            if is_constrained(curr['loc'], child_loc, curr['time_step'] + 1, constraint_table):
                 continue
             child = {'loc': child_loc,
                      'time_step': curr['time_step'] + 1,
@@ -170,10 +204,10 @@ def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
                      'parent': curr}
             if (child['loc'], child['time_step']) in closed_list:
                 existing_node = closed_list[(child['loc'], child['time_step'])]
-                if compare_nodes(child, existing_node):
+                if compare_nodes(child, existing_node) and get_path_length(child) < max_path_length:
                     closed_list[(child['loc'], child['time_step'])] = child
                     push_node(open_list, child)
-            else:
+            elif get_path_length(child) < max_path_length:
                 closed_list[(child['loc'], child['time_step'])] = child
                 push_node(open_list, child)
 
