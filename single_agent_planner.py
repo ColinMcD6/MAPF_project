@@ -132,6 +132,8 @@ def finished_agent_in_way(next_loc, next_time, constraint_table):
 
 def no_goal_constraints(time, goal, constraint_table):
     if time <= max_time_of_constraints(constraint_table):
+        if len(constraint_table.keys()) == 0:
+            return False
         for t in range(time, max(constraint_table.keys())):
             if is_vertex_constrained(goal, t, constraint_table):
                 return False
@@ -160,6 +162,12 @@ def compare_nodes(n1, n2):
     return n1['g_val'] + n1['h_val'] < n2['g_val'] + n2['h_val']
 
 
+def outside_boundary(loc, width, height):
+    if loc[0] < 0 or loc[1] < 0 or loc[0] >= width or loc[1] >= height:
+        return True
+    return False
+
+
 def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
     """ my_map      - binary obstacle map
         start_loc   - start position
@@ -172,7 +180,7 @@ def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
     # Task 1.1: Extend the A* search to search in the space-time domain
     #           rather than space domain, only.
 
-    max_path_length = h_values[start_loc]*h_values[start_loc]
+    max_path_length = len(my_map[0])*len(my_map)/2
     open_list = []
     closed_list = dict()
     earliest_goal_time_step = 0
@@ -193,7 +201,7 @@ def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
             return get_path(curr)
         for dir in range(5):
             child_loc = move(curr['loc'], dir)
-            if my_map[child_loc[0]][child_loc[1]]:
+            if outside_boundary(child_loc, len(my_map[0]), len(my_map)) or my_map[child_loc[0]][child_loc[1]]:
                 continue
             if is_constrained(curr['loc'], child_loc, curr['time_step'] + 1, constraint_table):
                 continue

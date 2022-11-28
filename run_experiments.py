@@ -94,6 +94,7 @@ if __name__ == '__main__':
 
         if args.solver == "CBS":
             print("***Run CBS***")
+            print("Run " + file)
             cbs = CBSSolver(my_map, starts, goals)
             paths = cbs.find_solution(args.disjoint)
         elif args.solver == "Independent":
@@ -113,6 +114,6 @@ if __name__ == '__main__':
         if not args.batch:
             print("***Test paths on a simulation***")
             animation = Animation(my_map, starts, goals, paths)
-            # animation.save("output.mp4", 1.0)
-            animation.show()
+            animation.save("output.mp4", 1.0)
+            # animation.show()
     result_file.close()

@@ -58,7 +58,7 @@ class PrioritizedPlanningSolver(object):
                 # Use 'loc': (-1, -1), (x, y) to signify that there is an agent there at all future times
                 constraints.append({'agent': agent,
                                     'loc': [(-1, -1), path[len(path) - 1]],
-                                    'time_step': time - 1})
+                                    'time_step': time-1})
             ##############################
 
         self.CPU_time = timer.time() - start_time
