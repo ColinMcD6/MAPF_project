@@ -195,8 +195,9 @@ class CBSSolver(object):
         while len(self.open_list) > 0:
             node = self.pop_node()
             collisions = node['collisions']
+            # print(node)
             if len(collisions) == 0:
-                self.print_results(node)
+                # self.print_results(node)
                 return node['paths']
             collision = collisions[0]
             constraints = standard_splitting(collision)

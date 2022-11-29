@@ -133,7 +133,7 @@ def finished_agent_in_way(next_loc, next_time, constraint_table):
 def no_goal_constraints(time, goal, constraint_table):
     if time <= max_time_of_constraints(constraint_table):
         if len(constraint_table.keys()) == 0:
-            return False
+            return True
         for t in range(time, max(constraint_table.keys())):
             if is_vertex_constrained(goal, t, constraint_table):
                 return False
