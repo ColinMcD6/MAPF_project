@@ -13,7 +13,7 @@ def get_sum_of_cost(paths):
         rst += path_length - 1
         # subtract from cost if end of path location is repeated
         i = -1
-        while path_length + i > 0 and path[i] == path[i-1]:
+        while path_length + i > 0 and path[i] == path[i - 1]:
             rst -= 1
             i -= 1
     return rst
@@ -68,10 +68,18 @@ def build_constraint_table(constraints, agent):
 
     for constraint in constraints:
         if constraint['positive'] and constraint['agent'] != agent:
-            if constraint['time_step'] not in constraint_table:
-                constraint_table.update({constraint['time_step']: [[constraint['loc'], False]]})
+            if len(constraint['loc']) == 1:
+                if constraint['time_step'] not in constraint_table:
+                    constraint_table.update({constraint['time_step']: [[constraint['loc'], False]]})
+                else:
+                    constraint_table[constraint['time_step']].append([constraint['loc'], False])
             else:
-                constraint_table[constraint['time_step']].append([constraint['loc'], False])
+                if constraint['time_step'] not in constraint_table:
+                    constraint_table.update({constraint['time_step']:
+                                            [[[constraint['loc'][1], constraint['loc'][0]], False]]})
+                else:
+                    constraint_table[constraint['time_step']].append(
+                        [constraint['loc'][1], constraint['loc'][0], False])
         elif constraint['agent'] == agent:
             if constraint['time_step'] not in constraint_table:
                 constraint_table.update({constraint['time_step']: [[constraint['loc'], constraint['positive']]]})
@@ -115,7 +123,7 @@ def is_constrained(curr_loc, next_loc, next_time, constraint_table):
     #               by time step, see build_constraint_table.
 
     if is_vertex_constrained(next_loc, next_time, constraint_table) \
-            or is_edge_constrained(curr_loc, next_loc, next_time, constraint_table)\
+            or is_edge_constrained(curr_loc, next_loc, next_time, constraint_table) \
             or finished_agent_in_way(next_loc, next_time, constraint_table):
         return True
     else:
@@ -127,7 +135,7 @@ def is_vertex_constrained(next_loc, next_time, constraint_table):
     # constraint location then vertex is constrained
     if next_time in constraint_table:
         for loc in constraint_table[next_time]:
-            if loc[0] != [next_loc] and loc[1]:
+            if len(loc[0]) == 1 and loc[0] != [next_loc] and loc[1]:
                 return True
         if [[next_loc], False] in constraint_table[next_time]:
             return True
@@ -139,7 +147,7 @@ def is_vertex_constrained(next_loc, next_time, constraint_table):
 def is_edge_constrained(curr_loc, next_loc, next_time, constraint_table):
     if next_time in constraint_table:
         for loc in constraint_table[next_time]:
-            if loc[0] != [curr_loc, next_loc] and loc[1]:
+            if len(loc[0]) == 2 and loc[0] != [curr_loc, next_loc] and loc[1]:
                 return True
         if [[curr_loc, next_loc], False] in constraint_table[next_time]:
             return True
@@ -158,7 +166,7 @@ def finished_agent_in_way(next_loc, next_time, constraint_table):
 def no_goal_constraints(time, goal, constraint_table):
     max_time = max_time_of_constraints(constraint_table)
     if time <= max_time:
-        for t in range(time, max_time+1):
+        for t in range(time, max_time + 1):
             if is_vertex_constrained(goal, t, constraint_table):
                 return False
     return True
@@ -203,7 +211,7 @@ def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
     # Task 1.1: Extend the A* search to search in the space-time domain
     #           rather than space domain, only.
 
-    max_path_length = len(my_map[0])*len(my_map)/2
+    max_path_length = len(my_map[0]) * len(my_map) / 2
     open_list = []
     closed_list = dict()
     earliest_goal_time_step = 0
@@ -220,8 +228,6 @@ def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
         curr = pop_node(open_list)
         #############################
         # Task 1.4: Adjust the goal test condition to handle goal constraints
-        if curr['loc'] == goal_loc:
-            print('hello')
         if curr['loc'] == goal_loc and no_goal_constraints(curr['time_step'], curr['loc'], constraint_table):
             return get_path(curr)
         for dir in range(5):

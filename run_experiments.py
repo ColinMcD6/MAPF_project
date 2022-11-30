@@ -97,8 +97,8 @@ if __name__ == '__main__':
             print("Run " + file)
             cbs = CBSSolver(my_map, starts, goals)
             paths = cbs.find_solution(args.disjoint)
-            for path in paths:
-                print(path)
+            # for path in paths:
+            #     print(path)
         elif args.solver == "Independent":
             print("***Run Independent***")
             solver = IndependentSolver(my_map, starts, goals)
@@ -107,6 +107,9 @@ if __name__ == '__main__':
             print("***Run Prioritized***")
             solver = PrioritizedPlanningSolver(my_map, starts, goals)
             paths = solver.find_solution()
+        elif args.solver == "All":
+            print("***Run All Algorithms***")
+            prioritized_solver = PrioritizedPlanningSolver(my_map, starts, goals)
         else:
             raise RuntimeError("Unknown solver!")
 

@@ -138,6 +138,8 @@ def paths_violate_constraint(constraint, paths):
                     (constraint['time_step'] > 0 and
                      [curr_loc, paths[agent][constraint['time_step']-1]] == constraint['loc'])):
                 affected_agents.append(agent)
+        elif agent != constraint['agent'] and [paths[agent][len(paths[agent])-1]] == constraint['loc']:
+            affected_agents.append(agent)
     return affected_agents
 
 
@@ -169,22 +171,22 @@ class CBSSolver(object):
     def push_node(self, node):
         heapq.heappush(self.open_list, (node['cost'], len(node['collisions']), self.num_of_generated, node))
         # print("Generate node {}".format(self.num_of_generated))
-        print("Generate node {}".format(self.num_of_generated))
-        for path in node['paths']:
-            print(path)
-        for constraint in node['constraints']:
-            print(constraint)
-        print(node['cost'])
+        # print("Generate node {}".format(self.num_of_generated))
+        # for path in node['paths']:
+        #     print(path)
+        # for constraint in node['constraints']:
+        #     print(constraint)
+        # print(node['cost'])
         self.num_of_generated += 1
 
     def pop_node(self):
         _, _, id, node = heapq.heappop(self.open_list)
         # print("Expand node {}".format(id))
-        print("Expand node {}".format(id))
-        for path in node['paths']:
-            print(path)
-        for constraint in node['constraints']:
-            print(constraint)
+        # print("Expand node {}".format(id))
+        # for path in node['paths']:
+        #     print(path)
+        # for constraint in node['constraints']:
+        #     print(constraint)
         self.num_of_expanded += 1
         return node
 
@@ -236,9 +238,9 @@ class CBSSolver(object):
             collisions = node['collisions']
             # print(node)
             if len(collisions) == 0:
-                self.print_results(node)
-                for cons in node['constraints']:
-                    print(cons)
+                # self.print_results(node)
+                # for cons in node['constraints']:
+                #     print(cons)
                 return node['paths']
             collision = collisions[0]
             if disjoint:
@@ -268,7 +270,7 @@ class CBSSolver(object):
                     else:
                         no_path = True
                     i += 1
-                if not no_path and len(affected_agents) > 0:
+                if not no_path:
                     new_node['collisions'] = detect_collisions(new_node['paths'])
                     new_node['cost'] = get_sum_of_cost(new_node['paths'])
                     self.push_node(new_node)
