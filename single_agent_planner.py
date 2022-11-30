@@ -9,7 +9,13 @@ def move(loc, dir):
 def get_sum_of_cost(paths):
     rst = 0
     for path in paths:
-        rst += len(path) - 1
+        path_length = len(path)
+        rst += path_length - 1
+        # subtract from cost if end of path location is repeated
+        i = -1
+        while path_length + i > 0 and path[i] == path[i-1]:
+            rst -= 1
+            i -= 1
     return rst
 
 
@@ -54,16 +60,23 @@ def build_constraint_table(constraints, agent):
     #               the given agent for each time step. The table can be used
     #               for a more efficient constraint violation check in the 
     #               is_constrained function.
+    # Task 4.1: Allow positive constraints. An agent is required to be in a cell
+    #               At a given time step. All other agents are therefore not allowed
+    #               to be in that cell at that time.
 
     constraint_table = {}
 
     for constraint in constraints:
-        if constraint['agent'] == agent:
+        if constraint['positive'] and constraint['agent'] != agent:
             if constraint['time_step'] not in constraint_table:
-                constraint_table.update({constraint['time_step']: [constraint['loc']]})
+                constraint_table.update({constraint['time_step']: [[constraint['loc'], False]]})
             else:
-                constraint_table[constraint['time_step']].append(constraint['loc'])
-
+                constraint_table[constraint['time_step']].append([constraint['loc'], False])
+        elif constraint['agent'] == agent:
+            if constraint['time_step'] not in constraint_table:
+                constraint_table.update({constraint['time_step']: [[constraint['loc'], constraint['positive']]]})
+            else:
+                constraint_table[constraint['time_step']].append([constraint['loc'], constraint['positive']])
     return constraint_table
 
 
@@ -110,15 +123,27 @@ def is_constrained(curr_loc, next_loc, next_time, constraint_table):
 
 
 def is_vertex_constrained(next_loc, next_time, constraint_table):
-    if next_time in constraint_table and [next_loc] in constraint_table[next_time]:
-        return True
+    # Check for positive constraint at next_time. If there is and next_loc does not equal the positive
+    # constraint location then vertex is constrained
+    if next_time in constraint_table:
+        for loc in constraint_table[next_time]:
+            if loc[0] != [next_loc] and loc[1]:
+                return True
+        if [[next_loc], False] in constraint_table[next_time]:
+            return True
+        return False
     else:
         return False
 
 
 def is_edge_constrained(curr_loc, next_loc, next_time, constraint_table):
-    if next_time in constraint_table and [curr_loc, next_loc] in constraint_table[next_time]:
-        return True
+    if next_time in constraint_table:
+        for loc in constraint_table[next_time]:
+            if loc[0] != [curr_loc, next_loc] and loc[1]:
+                return True
+        if [[curr_loc, next_loc], False] in constraint_table[next_time]:
+            return True
+        return False
     else:
         return False
 
@@ -131,19 +156,17 @@ def finished_agent_in_way(next_loc, next_time, constraint_table):
 
 
 def no_goal_constraints(time, goal, constraint_table):
-    if time <= max_time_of_constraints(constraint_table):
-        if len(constraint_table.keys()) == 0:
-            return True
-        for t in range(time, max(constraint_table.keys())):
+    max_time = max_time_of_constraints(constraint_table)
+    if time <= max_time:
+        for t in range(time, max_time+1):
             if is_vertex_constrained(goal, t, constraint_table):
                 return False
-    else:
-        return True
+    return True
 
 
 def max_time_of_constraints(constraint_table):
     if len(constraint_table.keys()) == 0:
-        return 0
+        return -1
     else:
         return max(constraint_table.keys())
 
@@ -197,11 +220,13 @@ def a_star(my_map, start_loc, goal_loc, h_values, agent, constraints):
         curr = pop_node(open_list)
         #############################
         # Task 1.4: Adjust the goal test condition to handle goal constraints
+        if curr['loc'] == goal_loc:
+            print('hello')
         if curr['loc'] == goal_loc and no_goal_constraints(curr['time_step'], curr['loc'], constraint_table):
             return get_path(curr)
         for dir in range(5):
             child_loc = move(curr['loc'], dir)
-            if outside_boundary(child_loc, len(my_map[0]), len(my_map)) or my_map[child_loc[0]][child_loc[1]]:
+            if outside_boundary(child_loc, len(my_map), len(my_map[0])) or my_map[child_loc[0]][child_loc[1]]:
                 continue
             if is_constrained(curr['loc'], child_loc, curr['time_step'] + 1, constraint_table):
                 continue
