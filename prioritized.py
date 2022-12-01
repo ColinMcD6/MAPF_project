@@ -30,11 +30,14 @@ class PrioritizedPlanningSolver(object):
         result = []
         constraints = []
 
-        for i in range(self.num_of_agents):  # Find path for each agent
+        i = 0
+        paths_found = True
+        while i < self.num_of_agents and paths_found:  # Find path for each agent
             path = a_star(self.my_map, self.starts[i], self.goals[i], self.heuristics[i],
                           i, constraints)
             if path is None:
-                raise BaseException('No solutions')
+                paths_found = False
+                # raise BaseException('No solutions')
             result.append(path)
 
             ##############################
@@ -49,22 +52,29 @@ class PrioritizedPlanningSolver(object):
                 for j in range(len(path)):
                     constraints.append({'agent': agent,
                                         'loc': [path[j]],
-                                        'time_step': time})
+                                        'time_step': time,
+                                        'positive': False})
                     if time != 0:
                         constraints.append({'agent': agent,
                                             'loc': [path[j], path[j - 1]],
-                                            'time_step': time})
+                                            'time_step': time,
+                                            'positive': False})
                     time += 1
                 # Use 'loc': (-1, -1), (x, y) to signify that there is an agent there at all future times
                 constraints.append({'agent': agent,
                                     'loc': [(-1, -1), path[len(path) - 1]],
-                                    'time_step': time-1})
+                                    'time_step': time-1,
+                                    'positive': False})
             ##############################
+            i += 1
 
         self.CPU_time = timer.time() - start_time
 
-        print("\n Found a solution! \n")
-        print("CPU time (s):    {:.2f}".format(self.CPU_time))
-        print("Sum of costs:    {}".format(get_sum_of_cost(result)))
-        print(result)
-        return result
+        if paths_found:
+            print("\n Found a solution! \n")
+            print("CPU time (s):    {:.2f}".format(self.CPU_time))
+            print("Sum of costs:    {}".format(get_sum_of_cost(result)))
+            print(result)
+            return {'paths': result, 'time': self.CPU_time}
+        else:
+            return {'paths': [], 'time': -1}

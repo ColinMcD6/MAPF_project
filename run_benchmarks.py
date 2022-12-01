@@ -34,18 +34,22 @@ def print_locations(my_map, locations):
         to_print += '\n'
     print(to_print)
 
-
-def import_mapf_instance(filename):
-    f = Path(filename)
+def import_map(filename):
+    file_path = 'maps/' + filename
+    f = Path(file_path)
     if not f.is_file():
         raise BaseException(filename + " does not exist.")
-    f = open(filename, 'r')
-    # first line: #rows #columns
+    f = open(file_path, 'r')
+    # first line is not important
+    f.readline()
     line = f.readline()
-    rows, columns = [int(x) for x in line.split(' ')]
+    _, rows = line.split()
+    line = f.readline()
+    _, columns = line.split()
     rows = int(rows)
-    columns = int(columns)
-    # #rows lines with the map
+    # columns = int(columns)
+    # another unimportant line in the map file
+    f.readline()
     my_map = []
     for r in range(rows):
         line = f.readline()
@@ -55,23 +59,42 @@ def import_mapf_instance(filename):
                 my_map[-1].append(True)
             elif cell == '.':
                 my_map[-1].append(False)
-    # #agents
+    f.close()
+    return my_map
+
+
+def import_mapf_instance(filename):
+    f = Path(filename)
+    if not f.is_file():
+        raise BaseException(filename + " does not exist.")
+    f = open(filename, 'r')
+    # first line: is the version not important
+    f.readline()
     line = f.readline()
-    num_agents = int(line)
+    include, map_instance, rows, columns, start_x, start_y, goal_x, goal_y, _ = line.split()
+    rows = int(rows)
+    columns = int(columns)
+    # load map
+    my_map = import_map(map_instance)
     # #agents lines with the start/goal positions
     starts = []
     goals = []
-    for a in range(num_agents):
+    if int(include) == 1:
+        starts.append((int(start_x), int(start_y)))
+        goals.append((int(goal_x), int(goal_y)))
+    line = f.readline()
+    while line:
+        include, _, _, _, sx, sy, gx, gy, _ = line.split()
+        if int(include) == 1:
+            starts.append((int(sx), int(sy)))
+            goals.append((int(gx), int(gy)))
         line = f.readline()
-        sx, sy, gx, gy = [int(x) for x in line.split(' ')]
-        starts.append((sx, sy))
-        goals.append((gx, gy))
     f.close()
     return my_map, starts, goals
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Runs various MAPF algorithms')
+    parser = argparse.ArgumentParser(description='Runs various MAPF algorithms on benchmark maps')
     parser.add_argument('--instance', type=str, default=None,
                         help='The name of the instance file(s)')
     parser.add_argument('--batch', action='store_true', default=False,
@@ -83,7 +106,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    result_file = open("results.csv", "w", buffering=1)
+    result_file = open("benchmarks.csv", "w", buffering=1)
     if args.solver == "All":
         result_file.write("file,prioritized cost,prioritized time,cbs cost,cbs generated,cbs expanded,"
                           "cbs time,disjoint cost,disjoint generated,disjoint expanded,disjoint time\n")

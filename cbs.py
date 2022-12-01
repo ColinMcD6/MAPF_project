@@ -241,7 +241,13 @@ class CBSSolver(object):
                 # self.print_results(node)
                 # for cons in node['constraints']:
                 #     print(cons)
-                return node['paths']
+                # return node['paths']
+                # noinspection PyPep8Naming
+                CPU_time = timer.time() - self.start_time
+                node['time'] = CPU_time
+                node['generated'] = self.num_of_generated
+                node['expanded'] = self.num_of_expanded
+                return node
             collision = collisions[0]
             if disjoint:
                 constraints = disjoint_splitting(collision)
