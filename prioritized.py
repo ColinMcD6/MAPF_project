@@ -36,7 +36,7 @@ class PrioritizedPlanningSolver(object):
             path = a_star(self.my_map, self.starts[i], self.goals[i], self.heuristics[i],
                           i, constraints)
             if path is None:
-                paths_found = False
+                return {'paths': [], 'time': -1}
                 # raise BaseException('No solutions')
             result.append(path)
 
@@ -70,11 +70,9 @@ class PrioritizedPlanningSolver(object):
 
         self.CPU_time = timer.time() - start_time
 
-        if paths_found:
-            print("\n Found a solution! \n")
-            print("CPU time (s):    {:.2f}".format(self.CPU_time))
-            print("Sum of costs:    {}".format(get_sum_of_cost(result)))
-            print(result)
-            return {'paths': result, 'time': self.CPU_time}
-        else:
-            return {'paths': [], 'time': -1}
+        # print("\n Found a solution! \n")
+        # print("CPU time (s):    {:.2f}".format(self.CPU_time))
+        # print("Sum of costs:    {}".format(get_sum_of_cost(result)))
+        # print(result)
+        return {'paths': result, 'time': self.CPU_time, 'num_agents': self.num_of_agents}
+

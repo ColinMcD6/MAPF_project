@@ -190,7 +190,7 @@ class CBSSolver(object):
         self.num_of_expanded += 1
         return node
 
-    def find_solution(self, disjoint=True):
+    def find_solution(self, disjoint=True, max_time=300):
         """ Finds paths for all agents from their start locations to their goal locations
 
         disjoint    - use disjoint splitting or not
@@ -233,7 +233,7 @@ class CBSSolver(object):
         #             3. Otherwise, choose the first collision and convert to a list of constraints (using your
         #                standard_splitting function). Add a new child node to your open list for each constraint
         #           Ensure to create a copy of any objects that your child nodes might inherit
-        while len(self.open_list) > 0:
+        while len(self.open_list) > 0 and (timer.time() - self.start_time) < max_time:
             node = self.pop_node()
             collisions = node['collisions']
             # print(node)
@@ -281,7 +281,22 @@ class CBSSolver(object):
                     new_node['cost'] = get_sum_of_cost(new_node['paths'])
                     self.push_node(new_node)
 
-        return None  # Failed to find solutions
+        if len(self.open_list) == 0:
+            node = {
+                'cost': -1,
+                'generated': self.num_of_generated,
+                'expanded': self.num_of_expanded,
+                'time': timer.time() - self.start_time
+            }
+            return node
+        else:
+            node = {
+                'cost': -1,
+                'generated': self.num_of_generated,
+                'expanded': self.num_of_expanded,
+                'time': -1
+            }
+            return node  # Failed to find solutions
 
     def print_results(self, node):
         print("\n Found a solution! \n")

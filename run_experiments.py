@@ -10,7 +10,6 @@ from single_agent_planner import get_sum_of_cost
 
 SOLVER = "CBS"
 
-
 def print_mapf_instance(my_map, starts, goals):
     print('Start locations')
     print_locations(my_map, starts)
@@ -80,7 +79,6 @@ if __name__ == '__main__':
                         help='Use the disjoint splitting')
     parser.add_argument('--solver', type=str, default=SOLVER,
                         help='The solver to use (one of: {CBS,Independent,Prioritized}), defaults to ' + str(SOLVER))
-
     args = parser.parse_args()
 
     result_file = open("results.csv", "w", buffering=1)

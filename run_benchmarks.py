@@ -9,6 +9,7 @@ from visualize import Animation
 from single_agent_planner import get_sum_of_cost
 
 SOLVER = "CBS"
+MAX_TIME = 300
 
 
 def print_mapf_instance(my_map, starts, goals):
@@ -33,6 +34,7 @@ def print_locations(my_map, locations):
                 to_print += '. '
         to_print += '\n'
     print(to_print)
+
 
 def import_map(filename):
     file_path = 'maps/' + filename
@@ -63,15 +65,16 @@ def import_map(filename):
     return my_map
 
 
-def import_mapf_instance(filename):
+def import_mapf_instance(filename, num_agents):
     f = Path(filename)
     if not f.is_file():
+        print('hello')
         raise BaseException(filename + " does not exist.")
     f = open(filename, 'r')
     # first line: is the version not important
     f.readline()
     line = f.readline()
-    include, map_instance, rows, columns, start_x, start_y, goal_x, goal_y, _ = line.split()
+    _, map_instance, rows, columns, start_x, start_y, goal_x, goal_y, _ = line.split()
     rows = int(rows)
     columns = int(columns)
     # load map
@@ -79,18 +82,22 @@ def import_mapf_instance(filename):
     # #agents lines with the start/goal positions
     starts = []
     goals = []
-    if int(include) == 1:
-        starts.append((int(start_x), int(start_y)))
-        goals.append((int(goal_x), int(goal_y)))
+    starts.append((int(start_x), int(start_y)))
+    goals.append((int(goal_x), int(goal_y)))
     line = f.readline()
-    while line:
+    lines_read = 1
+    while line and lines_read < num_agents:
         include, _, _, _, sx, sy, gx, gy, _ = line.split()
-        if int(include) == 1:
-            starts.append((int(sx), int(sy)))
-            goals.append((int(gx), int(gy)))
+        starts.append((int(sx), int(sy)))
+        goals.append((int(gx), int(gy)))
         line = f.readline()
+        lines_read += 1
     f.close()
-    return my_map, starts, goals
+    if not line:
+        eof_reached = True
+    else:
+        eof_reached = False
+    return eof_reached, my_map, starts, goals
 
 
 if __name__ == '__main__':
@@ -103,33 +110,76 @@ if __name__ == '__main__':
                         help='Use the disjoint splitting')
     parser.add_argument('--solver', type=str, default=SOLVER,
                         help='The solver to use (one of: {CBS,Independent,Prioritized}), defaults to ' + str(SOLVER))
+    parser.add_argument('--time', type=int, default=MAX_TIME,
+                        help='Set max time for cbs solver')
 
     args = parser.parse_args()
 
     result_file = open("benchmarks.csv", "w", buffering=1)
     if args.solver == "All":
-        result_file.write("file,prioritized cost,prioritized time,cbs cost,cbs generated,cbs expanded,"
-                          "cbs time,disjoint cost,disjoint generated,disjoint expanded,disjoint time\n")
+        folders = [
+            'empty-8-8.map-scen-even/scen-even',
+            'empty-8-8.map-scen-random/scen-random',
+            'empty-16-16.map-scen-even/scen-even',
+            'empty-16-16.map-scen-random/scen-random',
+            'empty-32-32.map-scen-even/scen-even',
+            'empty-32-32.map-scen-random/scen-random',
+            'empty-32-32-20.map-scen-even/scen-even',
+            'empty-32-32-20.map-scen-random/scen-random'
+                   ]
 
-    for file in sorted(glob.glob(args.instance)):
-        if args.solver == "All":
-            print("***Run All Algorithms***")
-            my_map, starts, goals = import_mapf_instance(file)
-            prioritized_solver = PrioritizedPlanningSolver(my_map, starts, goals)
-            cbs_solver = CBSSolver(my_map, starts, goals)
-            disjoint_solver = CBSSolver(my_map, starts, goals)
-            prioritized_node = prioritized_solver.find_solution()
-            cbs_node = cbs_solver.find_solution(False)
-            disjoint_node = disjoint_solver.find_solution(True)
-            result_file.write(
-                "{},{},{},{},{},{},{},{},{},{},{}\n".format(file, get_sum_of_cost(prioritized_node['paths']),
-                                                            prioritized_node['time'], cbs_node['cost'],
-                                                            cbs_node['generated'],
-                                                            cbs_node['expanded'], cbs_node['time'],
-                                                            disjoint_node['cost'],
-                                                            disjoint_node['generated'], disjoint_node['expanded'],
-                                                            disjoint_node['time']))
-        else:
+        result_file.write("file,num_agents,num_agents,prioritized cost,prioritized time,cbs cost,"
+                          "cbs generated,cbs expanded,cbs time,disjoint cost,disjoint generated,disjoint expanded,"
+                          "disjoint time\n")
+
+        print("***Run All Algorithms***")
+        # for dir in folders:
+            # for file in sorted(glob.glob(args.instance+dir+'/*')):
+        for file in sorted(glob.glob(args.instance + folders[6] + '/*')):
+            agents = 2
+            done = False
+            cbs_no_solution = 0
+            disjoint_no_solution = 0
+            while agents and not done:
+                print("*Running " + file + " with " + str(agents) + " agents")
+                done, my_map, starts, goals = import_mapf_instance(file, agents)
+                prioritized_solver = PrioritizedPlanningSolver(my_map, starts, goals)
+                cbs_solver = CBSSolver(my_map, starts, goals)
+                disjoint_solver = CBSSolver(my_map, starts, goals)
+                prioritized_node = prioritized_solver.find_solution()
+                if cbs_no_solution > 2:
+                    cbs_node = cbs_solver.find_solution(False, 1)
+                else:
+                    cbs_node = cbs_solver.find_solution(False, args.time)
+                    if cbs_node['time'] == -1:
+                        cbs_no_solution += 1
+
+                if disjoint_no_solution > 2:
+                    disjoint_node = disjoint_solver.find_solution(True, 1)
+                else:
+                    disjoint_node = disjoint_solver.find_solution(True, args.time)
+                    if disjoint_node['time'] == -1:
+                        disjoint_no_solution += 1
+
+                result_file.write("{},{},{},".format(file, str(len(starts)), agents))
+                # if cbs solver can't find solution for the number of agents 3 times in a row then don't attempt search
+                # with more agents to save time
+
+                if prioritized_node['time'] == -1:
+                    result_file.write("{},{},".format(-1, -1))
+                else:
+                    result_file.write("{},{},".format(get_sum_of_cost(prioritized_node['paths']),
+                                                      prioritized_node['time']))
+
+                result_file.write(
+                    "{},{},{},{},{},{},{},{}\n".format(cbs_node['cost'], cbs_node['generated'],
+                                                       cbs_node['expanded'], cbs_node['time'],
+                                                       disjoint_node['cost'], disjoint_node['generated'],
+                                                       disjoint_node['expanded'], disjoint_node['time']))
+                agents += 1
+    else:
+        for file in sorted(glob.glob(args.instance)):
+
             print("***Import an instance***")
             my_map, starts, goals = import_mapf_instance(file)
             print_mapf_instance(my_map, starts, goals)
