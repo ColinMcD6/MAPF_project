@@ -82,18 +82,20 @@ def import_mapf_instance(filename, num_agents):
     # #agents lines with the start/goal positions
     starts = []
     goals = []
-    starts.append((int(start_x), int(start_y)))
-    goals.append((int(goal_x), int(goal_y)))
+    if not my_map[int(start_x)][int(start_y)] and not my_map[int(goal_x)][int(goal_y)]:
+        starts.append((int(start_x), int(start_y)))
+        goals.append((int(goal_x), int(goal_y)))
     line = f.readline()
     lines_read = 1
     while line and lines_read < num_agents:
-        include, _, _, _, sx, sy, gx, gy, _ = line.split()
-        starts.append((int(sx), int(sy)))
-        goals.append((int(gx), int(gy)))
+        _, _, _, _, sx, sy, gx, gy, _ = line.split()
+        if not my_map[int(sx)][int(sy)] and not my_map[int(gx)][int(gy)]:
+            starts.append((int(sx), int(sy)))
+            goals.append((int(gx), int(gy)))
+            lines_read += 1
         line = f.readline()
-        lines_read += 1
     f.close()
-    if not line:
+    if not line or num_agents > 64:
         eof_reached = True
     else:
         eof_reached = False
@@ -124,8 +126,8 @@ if __name__ == '__main__':
             'empty-16-16.map-scen-random/scen-random',
             'empty-32-32.map-scen-even/scen-even',
             'empty-32-32.map-scen-random/scen-random',
-            'empty-32-32-20.map-scen-even/scen-even',
-            'empty-32-32-20.map-scen-random/scen-random'
+            'random-32-32-20.map-scen-even/scen-even',
+            'random-32-32-20.map-scen-random/scen-random'
                    ]
 
         result_file.write("file,num_agents,num_agents,prioritized cost,prioritized time,cbs cost,"
@@ -135,7 +137,7 @@ if __name__ == '__main__':
         print("***Run All Algorithms***")
         # for dir in folders:
             # for file in sorted(glob.glob(args.instance+dir+'/*')):
-        for file in sorted(glob.glob(args.instance + folders[6] + '/*')):
+        for file in sorted(glob.glob(args.instance + folders[7] + '/*')):
             agents = 2
             done = False
             cbs_no_solution = 0
@@ -181,7 +183,7 @@ if __name__ == '__main__':
         for file in sorted(glob.glob(args.instance)):
 
             print("***Import an instance***")
-            my_map, starts, goals = import_mapf_instance(file)
+            _, my_map, starts, goals = import_mapf_instance(file, 10)
             print_mapf_instance(my_map, starts, goals)
 
             if args.solver == "CBS":
