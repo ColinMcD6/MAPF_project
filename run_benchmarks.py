@@ -137,7 +137,7 @@ if __name__ == '__main__':
         print("***Run All Algorithms***")
         # for dir in folders:
             # for file in sorted(glob.glob(args.instance+dir+'/*')):
-        for file in sorted(glob.glob(args.instance + folders[7] + '/*')):
+        for file in sorted(glob.glob(args.instance + folders[2] + '/*')):
             agents = 2
             done = False
             cbs_no_solution = 0
