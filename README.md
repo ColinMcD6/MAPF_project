@@ -1,5 +1,5 @@
 # MAPF Project
-This project tests the performance of standard Multi-Agent Pathfinding algorithms. Read [MAPF Report.pdf](https://github.com/ColinMcD6/MAPF_project/blob/master/MAPF%20Project.pdf) for further details and results.
+This project tests the performance of standard Multi-Agent Pathfinding algorithms. Read [MAPF Project.pdf](https://github.com/ColinMcD6/MAPF_project/blob/master/MAPF%20Project.pdf) for further details and results.
 ### Running algorithms on test instances
 To run prioritized planning algorithm
 ```python run_experiments.py --instance <instance path> --solver Prioritized```
